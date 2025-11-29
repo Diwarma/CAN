@@ -1,7 +1,7 @@
 build*/
 *Debug/
 *Release/
-*.pro.user*
+*.pro.user
 *.autosave
 
 moc_*

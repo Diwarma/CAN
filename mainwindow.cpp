@@ -3,6 +3,13 @@
 #include <QLineEdit>
 #include <QDebug>
 #include <QVector>
+#include <fstream>
+#include <QDir>
+#include <QFileInfo>
+
+#include "framehandler.h"
+
+int BIT_IN_BYTE = 8;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -43,7 +50,6 @@ MainWindow::MainWindow(QWidget *parent) :
         sp->setRange(0x00, 0xFF);
         sp->setDisplayIntegerBase(16);
         sp->setStyleSheet("QSpinBox { text-transform: uppercase; }");
-        sp->clear();
         sp->setPrefix("0x");
         sp->setValue(0);
     }
@@ -56,25 +62,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->sp_dls->setValue(0);
 }
 
-QString MainWindow::getStrFromValue(int decimal) {
-    if (decimal == 0) {
-        return "0";
-    }
-    QString binary{};
-    int val = decimal;
-
-    while (decimal != 0) {
-        int rev = decimal % 2;
-        decimal /= 2;
-        binary.insert(0, QString::number(rev));
-    }
-
-    return binary;
-}
-
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+QString MainWindow::getStrFromValue(int decimal) {
+    return QString("%1").arg(decimal, BIT_IN_BYTE, 2, QLatin1Char('0'));
 }
 
 void MainWindow::on_sp_dls_valueChanged(int arg1)
@@ -175,3 +169,44 @@ void MainWindow::on_sp_hex8_valueChanged(int arg1)
     QString binary = getStrFromValue(arg1);
     ui->lbl_bit8->setText(binary);
 }
+
+void MainWindow::on_pb_send_clicked()
+{
+    int id = ui->sp_id->value();
+    bool rtr = ui->cb_rtr->isChecked();
+    int dlc = ui->sp_dls->value();
+    QVector<quint8> data{};
+    for (const auto& d : vect_hex) {
+        data.push_back(d->value());
+    }
+
+    FrameHandler frame(id, rtr, dlc, data);
+    frame.CreateFrame();
+
+    QString filePath = "files/output.txt";
+
+    // Создаем директорию через Qt
+    QDir dir;
+    if (!dir.exists("files")) {
+        dir.mkpath("files");
+    }
+
+    std::ofstream file(filePath.toStdString());
+
+    if (file.is_open()) {
+        file << frame; // Запись кадра в файл
+        file.close();
+
+        // Получаем абсолютный путь через Qt
+        QFileInfo fileInfo(filePath);
+        QString absolutePath = fileInfo.absoluteFilePath();
+
+        // Выводим полный путь в статус-бар
+        ui->statusbar->showMessage(QString("Файл сохранен: %1").arg(absolutePath), 5000);
+    } else {
+        ui->statusbar->showMessage("Ошибка: не удалось создать файл", 5000);
+    }
+
+    return;
+}
+

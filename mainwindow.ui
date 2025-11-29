@@ -124,7 +124,7 @@
        <item>
         <widget class="QLabel" name="lbl_dls">
          <property name="text">
-          <string>Длина данных (DLS)</string>
+          <string>Длина данных (DLC)</string>
          </property>
         </widget>
        </item>

@@ -41,6 +41,8 @@ private slots:
 
     void on_sp_hex8_valueChanged(int arg1);
 
+    void on_pb_send_clicked();
+
 private:
     Ui::MainWindow *ui;
     QVector<QLabel*> vect_bit;
