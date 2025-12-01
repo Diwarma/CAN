@@ -30,13 +30,14 @@ public:
     void CreateFrame();
 
     friend std::ostream& operator<<(std::ostream& os, const FrameHandler& frame);
+    std::string GetStringFrame() const;
 
 private:
     void SetDataFromVector(uint16_t data[8], const QVector<uint8_t>& initial_data, uint16_t dlc) const;
     std::string ToBinaryString(uint16_t number, size_t length) const;
     void AddFillBit(std::string& frame) const;
     uint16_t calculateCRC15(const uint16_t data[8], uint8_t dlc, uint16_t initialBitstream) const;
-    std::string GetStringFrame() const;
+
 
 private:
     int id_;

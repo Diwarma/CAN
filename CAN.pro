@@ -1,5 +1,5 @@
-QT       += core gui
-
+QT       += core gui \
+        printsupport
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
@@ -10,12 +10,14 @@ CONFIG += c++17
 
 SOURCES += \
     framehandler.cpp \
+    qcustomplot.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     framehandler.h \
-    mainwindow.h
+    qcustomplot.h \
+    mainwindow.h \
 
 FORMS += \
     mainwindow.ui

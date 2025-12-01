@@ -13,8 +13,5 @@ int main(int argc, char *argv[])
     qDebug() << "MainWindow создан";
 
     w.show();
-    qDebug() << "show() вызван";
-
-    qDebug() << "Запуск главного цикла...";
     return a.exec();
 }

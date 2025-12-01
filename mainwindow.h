@@ -20,6 +20,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     virtual ~MainWindow();
     QString getStrFromValue(int decimal);
+    void drawCanPlot(const QString& bitString);
 
 private slots:
     void on_sp_dls_valueChanged(int arg1);
@@ -42,6 +43,7 @@ private slots:
     void on_sp_hex8_valueChanged(int arg1);
 
     void on_pb_send_clicked();
+
 
 private:
     Ui::MainWindow *ui;

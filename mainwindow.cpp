@@ -6,8 +6,11 @@
 #include <fstream>
 #include <QDir>
 #include <QFileInfo>
-
+#include <QDialog>
+#include <QVBoxLayout>
 #include "framehandler.h"
+#include "qcustomplot.h"
+#include <bitset>
 
 int BIT_IN_BYTE = 8;
 
@@ -170,6 +173,81 @@ void MainWindow::on_sp_hex8_valueChanged(int arg1)
     ui->lbl_bit8->setText(binary);
 }
 
+void MainWindow::drawCanPlot(const QString& bitString) {
+    QVector<double> x, y;
+
+    // Преобразуем биты в точки для графика в ступенчатом стиле
+    for(int i = 0; i < bitString.length(); i++) {
+        double bitValue = (bitString[i] == '1') ? 1.0 : 0.0;
+        x.append(2*i + 1); // центр интервала [2*i, 2*i+2]
+        y.append(bitValue);
+    }
+
+    // Создаем график
+    QCustomPlot *customPlot = new QCustomPlot(this);
+    customPlot->addGraph();
+    customPlot->graph(0)->setData(x, y);
+    customPlot->graph(0)->setLineStyle(QCPGraph::lsStepCenter); // ступенчатый график
+    customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssNone)); // убрать точки
+    customPlot->xAxis->setLabel("Bit Position");
+    customPlot->yAxis->setLabel("Logic Level");
+    customPlot->xAxis->setRange(0, 2*bitString.length());
+    customPlot->yAxis->setRange(-0.1, 1.5); // Немного увеличили верхний предел для текста
+
+    // Добавляем отображение битов сверху графика
+    for(int i = 0; i < bitString.length(); i++) {
+        QCPItemText *bitText = new QCPItemText(customPlot);
+        bitText->position->setCoords(2*i + 1, 1.2); // Позиция над графиком
+        bitText->setText(bitString.mid(i, 1)); // Отображаем 0 или 1
+        bitText->setFont(QFont(font().family(), 10, QFont::Bold));
+    }
+
+    customPlot->replot();
+
+    // Добавляем на форму или показываем в отдельном окне
+    QDialog *plotDialog = new QDialog(this);
+    QVBoxLayout *layout = new QVBoxLayout(plotDialog);
+    layout->addWidget(customPlot);
+    plotDialog->resize(1200, 300);
+    plotDialog->exec();
+}
+
+// Для Вовы - обратная конвертация из бинарного файла в строку
+static std::string BinaryFileToString(const QString& filePath) {
+    std::ifstream file(filePath.toStdString(), std::ios::binary | std::ios::ate);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Не удалось открыть файл: " + filePath.toStdString());
+    }
+
+    // Получаем размер файла
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Читаем файл
+    std::vector<uint8_t> buffer(size);
+    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+        throw std::runtime_error("Ошибка чтения файла: " + filePath.toStdString());
+    }
+
+    // Конвертируем байты обратно в строку из '0' и '1'
+    std::string result;
+    for (uint8_t byte : buffer) {
+        result += std::bitset<8>(byte).to_string();
+    }
+
+    return result;
+}
+
+// Для Вовы - конвертация вектора байтов в строку
+static std::string BytesToString(const std::vector<uint8_t>& bytes) {
+    std::string result;
+    for (uint8_t byte : bytes) {
+        result += std::bitset<8>(byte).to_string();
+    }
+    return result;
+}
+
 void MainWindow::on_pb_send_clicked()
 {
     int id = ui->sp_id->value();
@@ -182,19 +260,45 @@ void MainWindow::on_pb_send_clicked()
 
     FrameHandler frame(id, rtr, dlc, data);
     frame.CreateFrame();
+    std::string str = frame.GetStringFrame();
+    ui->labelOutputFrame->setText("Кадр: " + QString::fromStdString(str));
+    drawCanPlot(QString::fromStdString(str));
+    QString filePath = "files/output.bin";
 
-    QString filePath = "files/output.txt";
 
     // Создаем директорию через Qt
     QDir dir;
     if (!dir.exists("files")) {
         dir.mkpath("files");
     }
-
-    std::ofstream file(filePath.toStdString());
+    std::ofstream file(filePath.toStdString(), std::ios::binary);
 
     if (file.is_open()) {
-        file << frame; // Запись кадра в файл
+        // Преобразование бинарной строки в байты
+        std::string binaryStr = str;
+        std::vector<uint8_t> bytes;
+
+        // Преобразуем каждые 8 символов в байт
+        for (size_t i = 0; i < binaryStr.length(); i += 8) {
+            std::string byteStr = binaryStr.substr(i, 8);
+
+            // Если в конце меньше 8 бит, дополняем нулями
+            if (byteStr.length() < 8) {
+                byteStr.append(8 - byteStr.length(), '0');
+            }
+
+            // Конвертируем строку из битов в байт
+            uint8_t byte = 0;
+            for (size_t j = 0; j < 8; ++j) {
+                if (byteStr[j] == '1') {
+                    byte |= (1 << (7 - j));
+                }
+            }
+            bytes.push_back(byte);
+        }
+
+        // Записываем байты в файл
+        file.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
         file.close();
 
         // Получаем абсолютный путь через Qt
@@ -206,7 +310,7 @@ void MainWindow::on_pb_send_clicked()
     } else {
         ui->statusbar->showMessage("Ошибка: не удалось создать файл", 5000);
     }
-
+    file.close();
     return;
 }
 
