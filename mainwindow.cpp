@@ -261,7 +261,7 @@ void MainWindow::on_pb_send_clicked()
     FrameHandler frame(id, rtr, dlc, data);
     frame.CreateFrame();
     std::string str = frame.GetStringFrame();
-    ui->labelOutputFrame->setText("Кадр: " + QString::fromStdString(str));
+    ui->labelOutput_2->setText("Кадр: " + QString::fromStdString(str));
     drawCanPlot(QString::fromStdString(str));
     QString filePath = "files/output.bin";
 
