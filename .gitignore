@@ -15,6 +15,7 @@ ui_*
 
 *.o
 *.obj
+*.bat
 
 .DS_Store
 Thumbs.db
