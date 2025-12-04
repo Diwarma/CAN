@@ -10,13 +10,13 @@ CONFIG += c++17
 
 SOURCES += \
     framehandler.cpp \
-    qcustomplot.cpp \
+    lib/qcustomplot.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     framehandler.h \
-    qcustomplot.h \
+    lib/qcustomplot.h \
     mainwindow.h \
 
 FORMS += \
